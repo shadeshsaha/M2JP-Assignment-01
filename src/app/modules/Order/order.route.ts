@@ -1,9 +1,9 @@
-import express from "express";
-import { OrderControllers } from "./order.controller";
+import { Router } from 'express';
+import { OrderControllers } from './order.controller';
 
-const router = express.Router();
+const router = Router();
 
-router.post("/", OrderControllers.createOrder);
-router.get("/", OrderControllers.getAnOrder); // here, if no order is retrieved by user email, then it will retrieve all the orders.
+router.post('/', OrderControllers.createOrder);
+router.get('/', OrderControllers.getAllOrders);
 
-export const orderRoutes = router;
+export const OrderRouter = router;
