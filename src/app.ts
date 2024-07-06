@@ -4,8 +4,8 @@ import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
 import { z } from 'zod';
 import notFound from './app/middlewares/notFound';
-import { OrderRouter } from './app/modules/Order/order.route';
-import { ProductRouter } from './app/modules/product/product.routes';
+import router from './app/routes';
+
 const app: Application = express();
 
 // Middlewares
@@ -14,8 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Application Routes
-app.use('/api/products', ProductRouter);
-app.use('/api/orders', OrderRouter);
+app.use('/api', router);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Mission To JP - Assignment-01');
