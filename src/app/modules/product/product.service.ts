@@ -1,55 +1,86 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { TProduct } from "./product.interface";
-import { Product } from "./product.model";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { TProduct } from './product.interface';
+import { Product } from './product.model';
 
-//create new product
-const createProduct = async (payload: TProduct) => {
-  const result = await Product.create(payload);
+// create a new product
+const createProductIntoDB = async (product: TProduct) => {
+  const data = await Product.create(product);
+  // removing the isDeleted flag from response
+  const { isDeleted, ...restData } = data.toObject();
+  console.log('isDeleted:', isDeleted);
+  // sending the response without isDeleted property
+  return restData;
+};
+
+// get all product from DB
+const getAllProductsFromDB = async () => {
+  const result = await Product.find().select('-isDeleted');
   return result;
 };
 
-//get all products
-const getAllProduct = async () => {
-  const result = await Product.find();
-  return result;
+// get a single product using ID from DB
+const getSingleProductFromDB = async (id: string) => {
+  const isExists = await Product.isProductExists(id);
+  if (!isExists) {
+    throw { code: 404, description: 'Product not found!' };
+  }
+  return isExists;
 };
 
-//get a single product by id
-const getSpecificProduct = async (_id: string) => {
-  const result = await Product.findOne({ _id: _id });
-  return result;
+// get a single product using ID from DB
+const updateProductData = async (id: string, payload: Partial<TProduct>) => {
+  const isExists = await Product.isProductExists(id);
+  if (isExists) {
+    const result = await Product.findByIdAndUpdate(
+      { _id: id },
+      {
+        $set: payload,
+      },
+      { new: true, fields: { _id: 0, isDeleted: 0 } },
+    );
+    return result;
+  } else {
+    throw { code: 404, description: 'Product not found!' };
+  }
 };
 
-//update a single product by id
-const getUpdatedProduct = async (filter: string, update: any) => {
-  const result = await Product.updateOne({ _id: filter }, update);
-  return result;
+// delete a single product using ID from DB
+const deleteProductFromDB = async (id: string) => {
+  const isExists = await Product.isProductExists(id);
+  if (isExists) {
+    const result = await Product.findByIdAndUpdate(
+      { _id: id },
+      { $set: { isDeleted: true } },
+      { new: true },
+    );
+    return result;
+  } else {
+    throw { code: 404, description: 'User not found!' };
+  }
 };
-
-//delete a product by id
-const deletedProduct = async (_id: string) => {
-  const result = await Product.deleteOne({ _id: _id });
-  return result;
-};
-
-//search a product based on name, category, description
-const searchAProduct = async (searchTerm: string) => {
-  const regex = new RegExp(searchTerm, "i");
+// delete a single product using ID from DB
+const getSearchedProductsFromDB = async (searchTerm: string) => {
   const result = await Product.find({
     $or: [
-      { name: { $regex: regex } },
-      { category: { $regex: regex } },
-      { description: { $regex: regex } },
+      { name: { $regex: searchTerm, $options: 'i' } },
+      { description: { $regex: searchTerm, $options: 'i' } },
     ],
-  });
+    isDeleted: { $ne: true },
+  }).select('-isDeleted');
+  if (result.length === 0) {
+    throw {
+      code: 404,
+      description: 'Products not found with this search term!',
+    };
+  }
   return result;
 };
 
 export const ProductServices = {
-  createProduct,
-  getAllProduct,
-  getSpecificProduct,
-  getUpdatedProduct,
-  deletedProduct,
-  searchAProduct,
+  createProductIntoDB,
+  getAllProductsFromDB,
+  getSingleProductFromDB,
+  updateProductData,
+  deleteProductFromDB,
+  getSearchedProductsFromDB,
 };
